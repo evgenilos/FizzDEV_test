@@ -1,0 +1,7 @@
+- name: Configure an EC2 DB Instance.
+  hosts: db
+  become: yes
+
+  roles:
+   - db_vm_configure
+

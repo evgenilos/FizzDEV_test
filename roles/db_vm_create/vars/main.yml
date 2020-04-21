@@ -1,0 +1,6 @@
+instance_type: t2.micro
+security_group: db_sec_group
+image: ami-06ce3edf0cff21f07
+keypair: ansible.user
+region: "eu-west-1"
+count: 1

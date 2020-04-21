@@ -1,0 +1,35 @@
+- name: Create nginx default dirs
+  file:
+    state: directory
+    path: "/etc/nginx/{{ item }}"
+    owner: "{{ nginx.user }}"
+    group: "{{ nginx.group }}"
+  with_items: "{{ nginx.dirs }}"
+
+- name: Create self-signed certificate, if configured.
+  command: "openssl dhparam -out {{ ss_certs.dhparam}} 2048"
+
+- name: Create dhparam
+  command: >
+    openssl req -x509 -nodes -subj '/CN={{ cert_hostname }}' -days 365
+    -newkey rsa:4096 -sha256 -keyout {{ item.key }} -out {{ item.cert }}
+    creates={{ item.cert }}
+  with_items: "{{ self_signed_certs }}"
+
+- name: Copy Toolbox nginx conf files
+  copy:
+    src: files/pma.conf
+    dest: /etc/nginx/include/pma.conf
+    owner: root
+    mode: 0644
+  notify: reload nginx
+
+- name: Copy PMA config template
+  template:
+    src: pma.j2
+    dest: /etc/nginx/conf.d/pma.conf
+    owner: root
+    mode: 0644
+  notify: reload nginx
+
+

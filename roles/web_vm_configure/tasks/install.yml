@@ -1,0 +1,27 @@
+- name: install updates using yum
+  yum:
+    name: "*"
+    state: latest
+
+- name: Add EPEL repo for CentOS/RHEL7 + AWS 2 
+  action: >
+    {{ ansible_pkg_mgr }} name={{ el7_epel_repo }} state=present update_cache=yes lock_timeout=120
+
+- name: Add IUS repo for CentOS/RHEL7 + AWS 2 
+  action: >
+    {{ ansible_pkg_mgr }} name={{ el7_ius_repo }} state=present update_cache=yes lock_timeout=120
+
+- name: Install PHP packages
+  action: >
+    {{ ansible_pkg_mgr }} name={{ php.pkgs }} state=latest update_cache=yes
+
+- name: Install pma packages
+  action: >
+    {{ ansible_pkg_mgr }} name={{ pma.pkgs }} state=latest update_cache=yes
+
+- name: Install nginx packages
+  action: >
+    {{ ansible_pkg_mgr }} name={{ nginx.pkgs }} state=latest update_cache=yes
+
+
+

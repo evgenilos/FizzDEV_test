@@ -1,0 +1,9 @@
+[local]
+localhost ansible_connection=local ansible_python_interpreter=/usr/local/bin/python3
+
+[db]
+54.171.195.131
+
+[web]
+54.171.204.76
+

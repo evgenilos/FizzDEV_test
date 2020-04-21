@@ -1,0 +1,75 @@
+- name: install updates using yum
+  yum:
+    name: "*"
+    state: latest
+
+- name: Add Percona repo
+  action: >
+    {{ ansible_pkg_mgr }} name={{ percona.repo }} state=present update_cache=yes
+
+- name: Enable Percona repository Percona  80
+  command: "percona-release setup ps80"
+
+- name: Install Percona server 8.0
+  action: >
+    {{ ansible_pkg_mgr }} name={{ percona.pkgs }} state=present update_cache=yes
+
+  #- name: Install Percona Python MySQLB module via pip
+  #  pip: name=MySQL-python
+
+- name: Create MySQL dirs
+  file:
+    state: directory
+    path: "{{ item }}"
+    owner: "{{ mysql.user }}"
+    group: "{{ mysql.group }}"
+    mode: 0755
+  with_items: "{{ mysql.dirs }}"
+
+- name: copy my.cnf
+  copy:
+    src: files/my.cnf
+    dest: /etc/my.cnf
+    mode: 0644
+
+- name: Copy MySQL root .my.cnf file
+  template:
+    src: my.cnf.root.j2
+    dest: /root/.my.cnf
+    owner: root
+    group: root
+    mode: 0600
+
+- name: Enable and start Percona server
+  service:
+    name: mysqld
+    state: restarted
+    enabled: yes
+
+- name: get root password
+  shell: "grep 'A temporary password is generated for root@localhost' /var/log/mysql/my-error.log | awk -F ' ' '{print $(NF)}'"
+  register: root_password
+
+- name: update expired root user password
+  command: mysql --user root --password={{ root_password.stdout }} --connect-expired-password --execute="ALTER USER 'root'@'localhost' IDENTIFIED WITH MYSQL_NATIVE_PASSWORD BY '{{ mysql_creds.root }}';"
+  ignore_errors: True
+
+- name: create mysql admin
+  mysql_user:
+    login_user: root
+    login_password: "{{ mysql_creds.root }}"
+    name: admin
+    password: "{{ mysql_creds.admin }}"
+    priv: '*.*:ALL,GRANT'
+    state: present
+    host: '%' 
+    
+- name: create mysql user
+  mysql_user:
+    login_user: root
+    login_password: "{{ mysql_creds.root }}"
+    name: user
+    password: "{{ mysql_creds.user }}"
+    priv: '*.*:SELECT,UPDATE'
+    state: present
+    host: '%' 

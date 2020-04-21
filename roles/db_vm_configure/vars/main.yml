@@ -1,0 +1,12 @@
+mysql:
+  dirs:
+    - /var/log/mysql
+  user: mysql
+  group: mysql
+
+percona:
+  repo: 'https://www.percona.com/downloads/percona-release/redhat/LATEST/'
+
+  pkgs:
+    - 'MySQL-python'
+    - 'percona-server-server'

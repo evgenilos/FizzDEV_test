@@ -1,0 +1,8 @@
+- name: Creating an EC2 DB Instance.
+  hosts: local
+  connection: local
+  gather_facts: False
+  tags: provisioning
+
+  roles:
+   - db_vm_create

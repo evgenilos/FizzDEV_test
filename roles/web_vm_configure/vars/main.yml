@@ -1,0 +1,57 @@
+el7_ius_repo: 'https://centos7.iuscommunity.org/ius-release.rpm'
+el7_epel_repo: 'https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm'
+
+php:
+  pkgs:
+    - php73-fpm
+    - php73-common
+    - php73-pdo
+    - php73-recode
+    - php73-gd
+    - php73-mbstring
+    - php73-xml
+    - php73-mysqlnd
+    - php73-json
+
+region: "eu-west-1"
+db_security_group: db_sec_group
+
+pma:
+  port: 3306
+  controlhost: 172.31.41.95
+  user: admin
+  pkgs:
+    - phpmyadmin
+    - python-pip
+
+nginx:
+  pkgs:
+    - nginx
+  dirs:
+    - sites-enabled
+    - sites-available
+    - include
+    - crt
+  user: nginx
+  group: nginx
+
+php_fpm:
+  user: php-fpm
+  group: php-fpm
+  comment: php-fpm
+  home: /var/lib/php-fpm
+
+pmaconfig:
+  - host: '172.31.41.95'
+    longcomment: 'DB'
+
+self_signed_certs:
+  - key: /etc/pki/tls/private/server.key
+    cert: /etc/pki/tls/certs/server.crt
+
+ss_certs:
+  key: /etc/pki/tls/private/server.key
+  cert: /etc/pki/tls/certs/server.crt
+  dhparam: /etc/pki/tls/certs/dhparam.pem
+
+cert_hostname: pma.web

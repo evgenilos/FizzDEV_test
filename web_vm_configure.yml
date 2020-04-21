@@ -1,0 +1,7 @@
+- name: Configure an EC2 WEB Instance.
+  hosts: web
+  become: yes
+
+  roles:
+   - web_vm_configure
+

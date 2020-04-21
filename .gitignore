@@ -1,0 +1,5 @@
+# Ignore locally used or created files
+hosts
+pwd
+*.retry
+.DS_Store

@@ -1,0 +1,100 @@
+- name: Ensure that required modules are installed
+  pip:
+    name: "{{ item }}"
+  with_items:
+  - boto
+  - botocore
+  - boto3
+
+- name: Create key pair using provided key_material
+  ec2_key:
+    aws_access_key: '{{ aws_access_key }}'
+    aws_secret_key: '{{ aws_secret_key }}'
+    region: '{{ region }}'
+    name: '{{ keypair }}'
+    key_material: '{{ ssh_keypair }}'
+
+- name:  Gather information about any instance with a tag key Name
+  ec2_instance_info:
+    aws_access_key: '{{ aws_access_key }}'
+    aws_secret_key: '{{ aws_secret_key }}'
+    region: '{{ region }}'
+    filters:
+      "tag:Name": DB
+      instance-state-name: [ "shutting-down", "stopping", "stopped", "running" ]
+  register: vmout
+  failed_when: vmout.instances
+
+- name: Remove DB server ip from inventory file if exist from previous run
+  replace:
+    path: inventory/inventory
+    regexp: '\[db\]\n[^\n]+' # Matches [db] and next line
+    replace: '[db]'          # Replace both lines with [db]
+
+- name: Create a database security group
+  local_action:
+    module: ec2_group
+    name: "{{ security_group }}"
+    description: Security Group for DB Servers
+    aws_access_key: '{{ aws_access_key }}'
+    aws_secret_key: '{{ aws_secret_key }}'
+    region: '{{ region }}'
+    rules:
+      - proto: tcp
+        from_port: 22
+        to_port: 22
+        cidr_ip: 0.0.0.0/0
+      - proto: tcp
+        from_port: 3306 
+        to_port: 3306
+        cidr_ip: 0.0.0.0/0
+    rules_egress:
+      - proto: all
+        cidr_ip: 0.0.0.0/0
+  register: basic_firewall
+
+- name: Launching DB instance
+  local_action: ec2
+                aws_access_key={{ aws_access_key }}
+                aws_secret_key={{ aws_secret_key }}
+                region={{ region }}
+                group={{ security_group }}
+                instance_type={{ instance_type}}
+                image={{ image }}
+                wait=true
+                wait_timeout=500
+                region={{ region }}
+                keypair={{ keypair }}
+                count={{count}}
+  register: ec2_db
+
+- name: Add the newly created EC2 instance to inventory file
+  local_action: lineinfile
+                path=inventory/inventory
+                regexp={{ item.public_ip }}
+                insertafter='\[db\]' line=ansible_host={{ item.public_ip }}
+  with_items: '{{ec2_db.instances}}'
+
+- name: Add new instance to launched host group
+  add_host:
+    hostname: "{{ item.public_ip }}"
+    groupname: launched
+  with_items: "{{ ec2_db.instances }}"
+
+- name: Let's wait for SSH to come up. Usually that takes ~10 seconds
+  local_action: wait_for
+                host={{ item.public_ip }}
+                port=22
+                state=started
+  with_items: '{{ ec2_db.instances }}'
+
+- name: Add tag to Instance
+  local_action: ec2_tag
+                aws_access_key={{ aws_access_key }}
+                aws_secret_key={{ aws_secret_key }}
+                resource={{ item.id }}
+                region={{ region }} state=present
+  with_items: '{{ ec2_db.instances }}'
+  args:
+    tags:
+      Name: DB
