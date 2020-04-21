@@ -1,5 +1,20 @@
-Description
+DESCRIPTION
 
 That playbooks where tested with ansible 2.9.6 on AWS environment on virtual machines AWS 2
 
+To get started aws keys should be changed in group_vars/all/creds.yml vault files
+The ssh public key should be also included in same vault file.
+The vault password is the email address I have received that task from.
 
+This is the way how I executed the playbooks.
+# ansible-playbook -vv web_vm_configure.yml -f 5 -u ec2-user --vault-password-file pwd
+
+There playbooks should be executed in appropriate order:
+
+1. db_vm_create.yml - Initiating instance on aws for DB needs.
+2. db_vm_configure.yml - Installing percona 8 and adding requrid users to the DB.
+3. web_vm_create.yml - Initiation instance on aws for WEB needs.
+4. web_vm_configure.yml - Installation of Web services and PhpMyAdmin, configuring firewall to allow only WEB server to DB.
+
+It was tested on AWS free account which have some limitations, so that setup in production would look different.
+Of course that playbook is raw and there are a lot of things to be added.
